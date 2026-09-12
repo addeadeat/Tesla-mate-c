@@ -1,0 +1,29 @@
+# Optional phase 2 overlay; always combine with docker-compose.yml.
+# Read-only local data use. This service does not replace the official collector.
+services:
+  teslamateapi:
+    image: tobiasehlert/teslamateapi:latest
+    restart: unless-stopped
+    environment:
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Fill ENCRYPTION_KEY in private .env}
+      DATABASE_USER: ${DATABASE_USER:-teslamate}
+      DATABASE_PASS: ${DATABASE_PASS:?Fill DATABASE_PASS in private .env}
+      DATABASE_NAME: ${DATABASE_NAME:-teslamate}
+      DATABASE_HOST: database
+      MQTT_HOST: mosquitto
+      TZ: ${TZ:-Asia/Hong_Kong}
+      API_TOKEN: ${API_TOKEN:-}
+      API_TOKEN_DISABLE: "false"
+      ENABLE_COMMANDS: "false"
+      COMMANDS_ALL: "false"
+      COMMANDS_WAKE: "false"
+      # 车控接口：二期再开（仅占位，须另行确认需求）；本次不配置或开启。
+      # Do not add command, logging or wake_up calls to the frontend.
+    ports:
+      # 8080:8080, explicitly bound to loopback or the configured NAS LAN IP.
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8080}:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started

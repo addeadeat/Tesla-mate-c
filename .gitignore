@@ -1,0 +1,26 @@
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+**/*.pem
+**/tokens.json
+**/*.key
+**/*.dump
+**/*.sql
+**/*.backup
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+*.log
+.DS_Store
+deploy/import/
+deploy/backups/
+deploy/.env
+# Framework-generated compatibility file; instructions live in root AGENTS.md.
+apps/web/CLAUDE.md

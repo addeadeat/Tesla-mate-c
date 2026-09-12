@@ -1,0 +1,34 @@
+{
+  "name": "z-teslamate-workspace",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.13.0",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @z/web",
+    "build": "npm run build --workspace @z/web",
+    "start": "npm run start --workspace @z/web",
+    "lint": "eslint apps packages scripts",
+    "typecheck": "tsc --noEmit -p packages/api-client && tsc --noEmit -p apps/web",
+    "test": "node --import tsx --test packages/api-client/test/*.test.ts",
+    "check:compose": "node scripts/check-compose.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "check": "npm run lint && npm run typecheck && npm test && npm run check:compose && npm run check:secrets"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "16.3.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "yaml": "^2.8.1"
+  }
+}

@@ -1,0 +1,81 @@
+name: z-teslamate
+
+services:
+  teslamate:
+    image: teslamate/teslamate:latest
+    restart: unless-stopped
+    environment:
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Fill ENCRYPTION_KEY in private .env}
+      DATABASE_USER: ${DATABASE_USER:-teslamate}
+      DATABASE_PASS: ${DATABASE_PASS:?Fill DATABASE_PASS in private .env}
+      DATABASE_NAME: ${DATABASE_NAME:-teslamate}
+      DATABASE_HOST: database
+      MQTT_HOST: mosquitto
+      TZ: ${TZ:-Asia/Hong_Kong}
+    ports:
+      # 4000:4000, restricted to a specific interface. NAS: set an explicit LAN IP.
+      - "${BIND_ADDRESS:-127.0.0.1}:${TESLAMATE_PORT:-4000}:4000"
+    volumes:
+      - ./import:/opt/app/import
+    cap_drop: [all]
+    depends_on:
+      database:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+
+  database:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-teslamate}
+      POSTGRES_PASSWORD: ${DATABASE_PASS:?Fill DATABASE_PASS in private .env}
+      POSTGRES_DB: ${DATABASE_NAME:-teslamate}
+      TZ: ${TZ:-Asia/Hong_Kong}
+    volumes:
+      # PostgreSQL 17 data path. Never attach this directory directly to PG18.
+      - teslamate-db:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # No host 5432 mapping.
+
+  grafana:
+    image: teslamate/grafana:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_USER: ${DATABASE_USER:-teslamate}
+      DATABASE_PASS: ${DATABASE_PASS:?Fill DATABASE_PASS in private .env}
+      DATABASE_NAME: ${DATABASE_NAME:-teslamate}
+      DATABASE_HOST: database
+      TZ: ${TZ:-Asia/Hong_Kong}
+    ports:
+      # 3000:3000. If occupied, set GRAFANA_PORT=3001; container port stays 3000.
+      - "${BIND_ADDRESS:-127.0.0.1}:${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - teslamate-grafana-data:/var/lib/grafana
+    depends_on:
+      database:
+        condition: service_healthy
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    # Official TeslaMate local-network style. Anonymous only inside this project.
+    command: mosquitto -c /mosquitto-no-auth.conf
+    environment:
+      TZ: ${TZ:-Asia/Hong_Kong}
+    volumes:
+      - mosquitto-conf:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+    # Do not publish 1883 or join an untrusted shared network.
+
+volumes:
+  teslamate-db:
+  teslamate-grafana-data:
+  mosquitto-conf:
+  mosquitto-data:
